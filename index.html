@@ -527,10 +527,6 @@ function shareSavedQuiz(id) {
     navigator.clipboard.writeText(shareUrl);
     alert("Đã copy link chia sẻ bộ đề [" + quiz.title + "]! \n\nLink này đã được BẢO MẬT: Bạn bè mở lên chỉ có thể làm bài.");
   } catch(e) {
-    alert("Có lỗi khi tạo link chia sẻ!");
-  }
-}
-
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('mode') === 'play') {
