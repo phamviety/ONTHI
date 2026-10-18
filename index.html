@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quản Lý Đề Thi Trắc Nghiệm</title>
+<title>Hệ Thống Ôn Thi Trắc Nghiệm</title>
 <style>
   :root {
     --bg-main: #140f0a;
@@ -237,7 +237,7 @@
   <!-- CỘT TRÁI -->
   <div class="main-content">
     
-    <!-- 1. GIAO DIỆN QUẢN LÝ ĐỀ THI -->
+    <!-- 1. GIAO DIỆN QUẢN LÝ ĐỀ THI (DÀNH CHO CHỦ WEB) -->
     <div id="homePanel">
       <div class="flex-row" style="justify-content: space-between; margin-bottom: 20px;">
         <h2 style="margin:0; color:#fcd34d; font-size: 24px;">📚 Kho Đề Thi Của Bạn</h2>
@@ -278,15 +278,6 @@
     <div id="quizPanel" class="hidden">
       <div id="quizContainer"></div>
       
-      <!-- Nút Share Link -->
-      <div id="sharePanel" class="hidden" style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); border-radius: 12px;">
-        <p style="margin: 0 0 10px; color: var(--success); font-weight: bold;">🎉 Gửi link này cho bạn bè để cùng làm:</p>
-        <div style="display: flex; gap: 10px;">
-          <input type="text" id="shareLinkInput" readonly style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--success); background: #110c08; color: #fcd34d; font-size: 14px; margin:0;">
-          <button class="success" onclick="copyShareLink()">Copy Link</button>
-        </div>
-      </div>
-
       <div style="margin-top: 30px; display: flex; justify-content: space-between;">
         <button id="btnPrev" class="secondary" onclick="prevQuestion()" style="visibility: hidden;">← Câu trước</button>
         <button id="btnNext" onclick="nextQuestion()">Câu tiếp theo →</button>
@@ -315,17 +306,20 @@
 </div>
 
 <script>
-const STORAGE_KEY = "quiz_management_v1";
-let allQuizzes = []; // Lưu tất cả các bộ đề
-let currentQuizData = null; // Bộ đề đang làm
+const STORAGE_KEY = "quiz_management_v2";
+let allQuizzes = []; 
+let currentQuizData = null; 
 let currentQuiz = [];
 let answers = {}; 
 let currentQIndex = 0;
 let submitted = false;
-let editingQuizId = null; // Đang sửa đề nào (null là tạo mới)
+let editingQuizId = null; 
 
 let timerInterval = null;
 let timeLeft = 0;
+
+// Biến kiểm tra xem người mở web là bạn hay là bạn bè (qua link share)
+let isGuestMode = false;
 
 /* ============ ĐIỀU HƯỚNG GIAO DIỆN ============ */
 function hideAllPanels() {
@@ -342,6 +336,12 @@ function hideAllPanels() {
 }
 
 function backToHome() {
+  // Nếu là khách (bạn bè mở link) thì không cho về trang chủ quản lý
+  if (isGuestMode) {
+    alert("Bạn đang làm bài qua link chia sẻ. Vui lòng tải lại trang để làm lại từ đầu!");
+    return;
+  }
+
   if (!confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ bị hủy.")) return;
   if (timerInterval) clearInterval(timerInterval);
   hideAllPanels();
@@ -351,6 +351,7 @@ function backToHome() {
 }
 
 function showCreateForm(isEdit = false) {
+  if (isGuestMode) return;
   hideAllPanels();
   document.getElementById("createPanel").classList.remove("hidden");
   document.getElementById("btnBackHome").classList.remove("hidden");
@@ -372,7 +373,7 @@ function hideCreateForm() {
   renderHome();
 }
 
-/* ============ QUẢN LÝ KHO ĐỀ (LOCAL STORAGE) ============ */
+/* ============ QUẢN LÝ KHO ĐỀ ============ */
 function loadData() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
@@ -385,6 +386,7 @@ function saveData() {
 }
 
 function renderHome() {
+  if (isGuestMode) return;
   const listEl = document.getElementById("quizList");
   if (allQuizzes.length === 0) {
     listEl.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--text-muted);">Chưa có bộ đề nào. Bấm "Tạo Đề Mới" để bắt đầu nhé!</div>`;
@@ -407,7 +409,7 @@ function renderHome() {
   `).join("");
 }
 
-/* ============ TẠO / SỬA / XÓA ĐỀ ============ */
+/* ============ TẠO / SỬA / XÓA ============ */
 function saveQuiz() {
   const title = document.getElementById("quizTitleInput").value.trim();
   const text = document.getElementById("inputText").value;
@@ -421,15 +423,13 @@ function saveQuiz() {
   if (!result.length) { setStatus("Không có câu hỏi hợp lệ.", "red"); return; }
 
   if (editingQuizId) {
-    // Sửa
     const index = allQuizzes.findIndex(q => q.id === editingQuizId);
     if (index !== -1) {
       allQuizzes[index] = { ...allQuizzes[index], title, questions: result, time };
     }
   } else {
-    // Tạo mới
     const newQuiz = { id: Date.now().toString(), title, questions: result, time };
-    allQuizzes.unshift(newQuiz); // Đưa lên đầu
+    allQuizzes.unshift(newQuiz);
   }
   
   saveData();
@@ -439,14 +439,10 @@ function saveQuiz() {
 function editQuiz(id) {
   const quiz = allQuizzes.find(q => q.id === id);
   if (!quiz) return;
-  
   editingQuizId = id;
   showCreateForm(true);
-  
   document.getElementById("quizTitleInput").value = quiz.title;
   document.getElementById("timeInput").value = quiz.time;
-  
-  // Chuyển mảng câu hỏi thành text để sửa
   document.getElementById("inputText").value = quiz.questions.map((item, idx) => {
     const opts = item.options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join("\n");
     return `Câu ${idx + 1}: ${item.q}\n${opts}\nĐáp án: ${String.fromCharCode(65 + item.answer)}`;
@@ -454,52 +450,65 @@ function editQuiz(id) {
 }
 
 function deleteQuiz(id) {
-  if (!confirm("Bạn có chắc muốn xóa bộ đề này? Thao tác không thể hoàn tác.")) return;
+  if (!confirm("Bạn có chắc muốn xóa bộ đề này?")) return;
   allQuizzes = allQuizzes.filter(q => q.id !== id);
   saveData();
   renderHome();
 }
 
-/* ============ SHARE LINK ============ */
+/* ============ SHARE LINK (CÓ BẢO MẬT) ============ */
 function shareSavedQuiz(id) {
   const quiz = allQuizzes.find(q => q.id === id);
   if (!quiz) return;
   try {
     const jsonStr = JSON.stringify(quiz.questions);
     const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    // Thêm tham số mode=play để khóa giao diện quản lý của bạn bè
     const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?data=${base64}`;
+    const shareUrl = `${baseUrl}?mode=play&title=${encodeURIComponent(quiz.title)}&time=${quiz.time}&data=${base64}`;
     
     navigator.clipboard.writeText(shareUrl);
-    alert("Đã copy link chia sẻ bộ đề [" + quiz.title + "]! Hãy gửi cho bạn bè.");
+    alert("Đã copy link chia sẻ bộ đề [" + quiz.title + "]! \n\nLink này đã được BẢO MẬT: Bạn bè mở lên chỉ có thể làm bài, không thể xem hay sửa kho đề của bạn.");
   } catch(e) {
     alert("Có lỗi khi tạo link chia sẻ!");
   }
 }
 
+/* ============ KIỂM TRA LINK KHI MỞ WEB ============ */
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  const data = urlParams.get('data');
-  if (data) {
-    try {
-      const decodedStr = decodeURIComponent(escape(atob(data)));
-      const decodedQuestions = JSON.parse(decodedStr);
-      if (Array.isArray(decodedQuestions) && decodedQuestions.length > 0) {
+  
+  // Nếu có tham số mode=play => Chế độ Khách (Bạn bè)
+  if (urlParams.get('mode') === 'play') {
+    isGuestMode = true;
+    const data = urlParams.get('data');
+    const title = urlParams.get('title') || "Đề Được Chia Sẻ";
+    const time = parseInt(urlParams.get('time')) || 15;
+    
+    if (data) {
+      try {
+        const decodedStr = decodeURIComponent(escape(atob(data)));
+        const decodedQuestions = JSON.parse(decodedStr);
         
-        // Tạo một object quiz tạm để bắt đầu
-        const sharedQuiz = {
-          id: "shared_" + Date.now(),
-          title: "Đề được chia sẻ",
-          questions: decodedQuestions,
-          time: 15 // Mặc định 15 phút
-        };
-        
-        window.history.replaceState({}, document.title, window.location.pathname);
-        beginQuizSession(sharedQuiz);
-        return true; 
+        if (Array.isArray(decodedQuestions) && decodedQuestions.length > 0) {
+          const sharedQuiz = {
+            id: "shared_" + Date.now(),
+            title: title,
+            questions: decodedQuestions,
+            time: time
+          };
+          
+          // Xóa URL cho sạch
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Tự động vào làm bài luôn, ko hiện Trang Chủ
+          hideAllPanels();
+          beginQuizSession(sharedQuiz);
+          return true; 
+        }
+      } catch (e) {
+        alert("Link chia sẻ bị lỗi hoặc đã bị cắt ngắn!");
       }
-    } catch (e) {
-      alert("Link chia sẻ bị lỗi hoặc đã bị cắt ngắn!");
     }
   }
   return false;
@@ -514,7 +523,6 @@ function startSavedQuiz(id) {
 function beginQuizSession(quizData) {
   currentQuizData = quizData;
   
-  // Random câu và đáp án
   currentQuiz = quizData.questions.map(item => {
     const correctText = item.options[item.answer];
     const opts = [...item.options].sort(() => Math.random() - 0.5);
@@ -531,18 +539,15 @@ function beginQuizSession(quizData) {
   document.getElementById("scoreBoard").classList.remove("hidden");
   document.getElementById("btnTogglePalette").classList.remove("hidden");
   document.getElementById("timerDisplay").classList.remove("hidden");
-  document.getElementById("result").innerHTML = "";
   
-  // Tự động tạo link share nếu đang làm đề tự tạo (không phải đề share)
-  if (!quizData.id.startsWith("shared_")) {
-    try {
-      const jsonStr = JSON.stringify(quizData.questions);
-      const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-      const baseUrl = window.location.origin + window.location.pathname;
-      document.getElementById("shareLinkInput").value = `${baseUrl}?data=${base64}`;
-      document.getElementById("sharePanel").classList.remove("hidden");
-    } catch(e) {}
+  // Nếu là bạn bè (Guest) thì ẩn nút Trang chủ, ngược lại thì hiện
+  if (!isGuestMode) {
+    document.getElementById("btnBackHome").classList.remove("hidden");
+  } else {
+    document.getElementById("btnBackHome").classList.add("hidden");
   }
+  
+  document.getElementById("result").innerHTML = "";
 
   document.getElementById("scoreCorrect").textContent = "0";
   document.getElementById("scoreWrong").textContent = "0";
@@ -565,15 +570,7 @@ function beginQuizSession(quizData) {
   }, 1000);
 }
 
-/* ============ CÁC HÀM XỬ LÝ LÀM BÀI (GIỮ NGUYÊN) ============ */
-function copyShareLink() {
-  const copyText = document.getElementById("shareLinkInput");
-  copyText.select();
-  copyText.setSelectionRange(0, 99999);
-  navigator.clipboard.writeText(copyText.value);
-  alert("Đã copy link! Bạn có thể gửi cho bạn bè ngay bây giờ.");
-}
-
+/* ============ CÁC HÀM XỬ LÝ LÀM BÀI ============ */
 function toggleSidebar() {
   document.getElementById("sidebarPanel").classList.toggle("collapsed");
 }
@@ -631,9 +628,6 @@ function renderCurrentQuestion() {
     document.getElementById("btnNext").classList.remove("hidden");
     document.getElementById("btnFinish").classList.add("hidden");
   }
-
-  if (currentQIndex > 0) document.getElementById("sharePanel").classList.add("hidden");
-  else if (currentQuizData && !currentQuizData.id.startsWith("shared_")) document.getElementById("sharePanel").classList.remove("hidden");
 
   const quizDiv = document.getElementById("quizContainer");
   quizDiv.innerHTML = `
@@ -764,10 +758,15 @@ function finishQuiz() {
   }
 
   document.getElementById("quizContainer").innerHTML = ""; 
-  document.getElementById("sharePanel").classList.add("hidden"); 
   document.getElementById("btnPrev").classList.add("hidden");
   document.getElementById("btnNext").classList.add("hidden");
   document.getElementById("btnFinish").classList.add("hidden");
+
+  // Nếu là khách, không hiện nút "Về trang chủ" vì họ không có quyền vào kho đề
+  let homeBtn = "";
+  if (!isGuestMode) {
+    homeBtn = `<button class="primary" onclick="backToHome()" style="padding: 12px 24px; margin-left:10px;">🏠 Về Trang Chủ</button>`;
+  }
 
   document.getElementById("result").innerHTML = `
     <div class="score-box">
@@ -775,9 +774,9 @@ function finishQuiz() {
       <div style="font-size: 22px; margin: 15px 0;">Bạn đúng <b>${correct}/${currentQuiz.length}</b> câu</div>
       <div style="font-size: 36px; font-weight: 700; color: ${pct >= 50 ? 'var(--success)' : 'var(--danger)'}; margin-bottom: 20px;">${pct}%</div>
       <div>
-        <button class="secondary" onclick="beginQuizSession(currentQuizData)" style="padding: 12px 24px;">🔄 Làm lại bộ đề này</button>
+        <button class="secondary" onclick="beginQuizSession(currentQuizData)" style="padding: 12px 24px;">🔄 Làm lại</button>
         ${actionHtml}
-        <button class="primary" onclick="backToHome()" style="padding: 12px 24px; margin-left:10px;">🏠 Về Trang Chủ</button>
+        ${homeBtn}
       </div>
     </div>
   `;
@@ -815,10 +814,10 @@ function escapeHtml(s) {
 (function init() {
   loadData();
   
-  // Nếu mở bằng link share
   const isShared = checkUrlParams();
   
-  if (!isShared) {
+  // Nếu không phải khách (chính bạn mở) -> Hiển thị Kho đề
+  if (!isShared && !isGuestMode) {
     hideAllPanels();
     document.getElementById("homePanel").classList.remove("hidden");
     document.getElementById("btnBackHome").classList.remove("hidden");
