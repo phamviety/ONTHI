@@ -513,22 +513,57 @@ function deleteQuiz(id) {
 }
 
 /* ============ SHARE LINK ============ */
+/* ============ SHARE LINK ============ */
 function shareSavedQuiz(id) {
   const quiz = allQuizzes.find(q => q.id === id);
   if (!quiz) return;
   try {
     const jsonStr = JSON.stringify(quiz.questions);
-    const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    // Sử dụng encodeURIComponent để hỗ trợ tiếng Việt
+    const base64 = btoa(encodeURIComponent(jsonStr));
     const baseUrl = window.location.origin + window.location.pathname;
     const shareUrl = `${baseUrl}?mode=play&title=${encodeURIComponent(quiz.title)}&time=${quiz.time}&data=${base64}`;
     
     navigator.clipboard.writeText(shareUrl);
-    alert("Đã copy link chia sẻ bộ đề [" + quiz.title + "]! \n\nLink này đã được BẢO MẬT: Bạn bè mở lên chỉ có thể làm bài, không thể xem hay sửa kho đề của bạn.");
+    alert("Đã copy link chia sẻ bộ đề [" + quiz.title + "]! \n\nLink này đã được BẢO MẬT: Bạn bè mở lên chỉ có thể làm bài.");
   } catch(e) {
     alert("Có lỗi khi tạo link chia sẻ!");
   }
 }
 
+function checkUrlParams() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'play') {
+    isGuestMode = true;
+    const data = urlParams.get('data');
+    const title = urlParams.get('title') || "Đề Được Chia Sẻ";
+    const time = parseInt(urlParams.get('time')) || 15;
+    
+    if (data) {
+      try {
+        // Giải mã chuỗi Base64 có hỗ trợ tiếng Việt
+        const decodedStr = decodeURIComponent(atob(data));
+        const decodedQuestions = JSON.parse(decodedStr);
+        
+        if (Array.isArray(decodedQuestions) && decodedQuestions.length > 0) {
+          const sharedQuiz = {
+            id: "shared_" + Date.now(),
+            title: title,
+            questions: decodedQuestions,
+            time: time
+          };
+          window.history.replaceState({}, document.title, window.location.pathname);
+          hideAllPanels();
+          beginQuizSession(sharedQuiz);
+          return true; 
+        }
+      } catch (e) {
+        alert("Link chia sẻ bị lỗi hoặc đã bị cắt ngắn!");
+      }
+    }
+  }
+  return false;
+}
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('mode') === 'play') {
