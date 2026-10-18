@@ -16,6 +16,13 @@
     --text-muted: #a8a29e;
     --success: #10b981;
     --danger: #ef4444;
+    
+    /* Màu cho thẻ đề thi */
+    --card-bg: #1a2230;
+    --card-border: #2a3a50;
+    --card-hover: #223047;
+    --btn-blue: #38bdf8;
+    --btn-blue-hover: #0ea5e9;
   }
 
   * { box-sizing: border-box; }
@@ -101,7 +108,7 @@
   
   .main-content { 
     flex: 1; 
-    max-width: 800px; 
+    max-width: 1000px; /* Rộng ra để chứa lưới 3 cột */
     transition: max-width 0.3s ease;
   }
   
@@ -189,17 +196,59 @@
   #result { text-align: center; margin: 20px 0; }
   .score-box { background: linear-gradient(135deg, #241b13 0%, #332618 100%); padding: 30px; border-radius: 20px; border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(217, 119, 6, 0.2); }
 
-  /* --- QUẢN LÝ ĐỀ THI (DASHBOARD) --- */
-  .quiz-list { display: flex; flex-direction: column; gap: 12px; }
-  .quiz-item {
-    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
-    padding: 16px; display: flex; justify-content: space-between; align-items: center;
+  /* --- LƯỚI THẺ ĐỀ THI (MỚI) --- */
+  .quiz-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 20px; 
+  }
+  
+  .quiz-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+  }
+  .quiz-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    transform: translateY(-4px);
+  }
+  
+  .quiz-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .quiz-icon { 
+    width: 32px; height: 32px; border-radius: 8px; background: #2a3a50; 
+    display: flex; align-items: center; justify-content: center; font-size: 16px; color: #94a3b8; 
+  }
+  .quiz-card h3 { margin: 0; font-size: 18px; color: #f8fafc; font-weight: 700; }
+  
+  .quiz-desc { color: #94a3b8; font-size: 14px; margin-bottom: 24px; flex-grow: 1; }
+  
+  .btn-play {
+    width: 100%; padding: 12px; border-radius: 10px;
+    background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white; font-weight: 600; font-size: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+    text-decoration: none; margin-bottom: 12px;
+    box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
+    border: none; cursor: pointer;
     transition: all 0.2s;
   }
-  .quiz-item:hover { border-color: var(--primary); background: #2a1f16; }
-  .quiz-info h4 { margin: 0 0 4px; color: #fcd34d; font-size: 18px; }
-  .quiz-info p { margin: 0; color: var(--text-muted); font-size: 14px; }
-  .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-play:hover { opacity: 0.9; transform: translateX(4px); }
+  .btn-play span:last-child { font-size: 18px; }
+  
+  .card-tools { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-tool {
+    background: transparent; border: 1px solid #334155; color: #94a3b8;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+    box-shadow: none; margin: 0; transition: all 0.2s;
+  }
+  .btn-tool:hover { background: #334155; color: white; }
+  .btn-tool.delete:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444; }
 
   @media (max-width: 850px) {
     .container { flex-direction: column; margin-top: 60px; }
@@ -208,7 +257,6 @@
     .top-bar { flex-direction: column; height: auto; padding: 10px; gap: 10px; }
     .container { margin-top: 100px; }
     #progressBarContainer { top: 100px; }
-    .quiz-item { flex-direction: column; align-items: flex-start; gap: 12px; }
   }
 </style>
 </head>
@@ -237,13 +285,14 @@
   <!-- CỘT TRÁI -->
   <div class="main-content">
     
-    <!-- 1. GIAO DIỆN QUẢN LÝ ĐỀ THI (DÀNH CHO CHỦ WEB) -->
+    <!-- 1. GIAO DIỆN QUẢN LÝ ĐỀ THI (LƯỚI THẺ) -->
     <div id="homePanel">
-      <div class="flex-row" style="justify-content: space-between; margin-bottom: 20px;">
-        <h2 style="margin:0; color:#fcd34d; font-size: 24px;">📚 Kho Đề Thi Của Bạn</h2>
-        <button onclick="showCreateForm()">+ Tạo Đề Mới</button>
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 24px;">
+        <h2 style="margin:0; color:#f8fafc; font-size: 24px; font-weight: 800;">Kho Đề Thi Của Bạn</h2>
+        <button onclick="showCreateForm()" style="background: #2563eb; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);">+ Tạo Đề Mới</button>
       </div>
-      <div id="quizList" class="quiz-list">
+      
+      <div id="quizList" class="quiz-grid">
         <!-- Các bộ đề sẽ được render ở đây -->
       </div>
     </div>
@@ -255,6 +304,9 @@
         
         <label style="color:#fff; font-weight:bold; display:block; margin-bottom:5px;">Tên bộ đề:</label>
         <input type="text" id="quizTitleInput" placeholder="VD: Đề cương Tư tưởng HCM...">
+        
+        <label style="color:#fff; font-weight:bold; display:block; margin-bottom:5px;">Mô tả ngắn (hiển thị trên thẻ):</label>
+        <input type="text" id="quizDescInput" placeholder="VD: Tổng hợp tài liệu môn Tư tưởng HCM...">
         
         <p class="hint"><b>Hướng dẫn dán đề:</b> Các câu cách nhau 1 dòng trống. Cuối mỗi câu phải có <b>Đáp án: A</b> (hoặc B, C, D).</p>
         <textarea id="inputText" placeholder="Dán câu hỏi của bạn vào đây..."></textarea>
@@ -306,7 +358,7 @@
 </div>
 
 <script>
-const STORAGE_KEY = "quiz_management_v2";
+const STORAGE_KEY = "quiz_management_v3";
 let allQuizzes = []; 
 let currentQuizData = null; 
 let currentQuiz = [];
@@ -317,8 +369,6 @@ let editingQuizId = null;
 
 let timerInterval = null;
 let timeLeft = 0;
-
-// Biến kiểm tra xem người mở web là bạn hay là bạn bè (qua link share)
 let isGuestMode = false;
 
 /* ============ ĐIỀU HƯỚNG GIAO DIỆN ============ */
@@ -336,12 +386,7 @@ function hideAllPanels() {
 }
 
 function backToHome() {
-  // Nếu là khách (bạn bè mở link) thì không cho về trang chủ quản lý
-  if (isGuestMode) {
-    alert("Bạn đang làm bài qua link chia sẻ. Vui lòng tải lại trang để làm lại từ đầu!");
-    return;
-  }
-
+  if (isGuestMode) { alert("Bạn đang làm bài qua link chia sẻ!"); return; }
   if (!confirm("Bạn có chắc muốn thoát? Tiến trình làm bài sẽ bị hủy.")) return;
   if (timerInterval) clearInterval(timerInterval);
   hideAllPanels();
@@ -360,6 +405,7 @@ function showCreateForm(isEdit = false) {
   if (!isEdit) {
     editingQuizId = null;
     document.getElementById("quizTitleInput").value = "";
+    document.getElementById("quizDescInput").value = "";
     document.getElementById("inputText").value = "";
     document.getElementById("timeInput").value = "15";
     setStatus("", "");
@@ -388,22 +434,30 @@ function saveData() {
 function renderHome() {
   if (isGuestMode) return;
   const listEl = document.getElementById("quizList");
+  
   if (allQuizzes.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--text-muted);">Chưa có bộ đề nào. Bấm "Tạo Đề Mới" để bắt đầu nhé!</div>`;
+    listEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--text-muted);">Chưa có bộ đề nào. Bấm "Tạo Đề Mới" để bắt đầu nhé!</div>`;
     return;
   }
 
   listEl.innerHTML = allQuizzes.map(q => `
-    <div class="quiz-item">
-      <div class="quiz-info">
-        <h4>${escapeHtml(q.title)}</h4>
-        <p>Số câu: ${q.questions.length} | Thời gian: ${q.time} phút</p>
+    <div class="quiz-card">
+      <div class="quiz-card-header">
+        <div class="quiz-icon">📄</div>
+        <h3>${escapeHtml(q.title)}</h3>
       </div>
-      <div class="quiz-actions">
-        <button class="success" onclick="startSavedQuiz('${q.id}')">▶ Làm Bài</button>
-        <button class="secondary" onclick="shareSavedQuiz('${q.id}')">🔗 Share</button>
-        <button class="secondary" onclick="editQuiz('${q.id}')">✏️ Sửa</button>
-        <button class="danger" onclick="deleteQuiz('${q.id}')">🗑 Xóa</button>
+      <div class="quiz-desc">
+        ${q.desc ? escapeHtml(q.desc) : 'Tổng hợp tài liệu ôn tập trắc nghiệm.'}
+        <br><span style="font-size:12px; opacity:0.7; margin-top:8px; display:inline-block;">📝 ${q.questions.length} câu | ⏱️ ${q.time} phút</span>
+      </div>
+      <button class="btn-play" onclick="startSavedQuiz('${q.id}')">
+        <span>Xem ngay</span>
+        <span>→</span>
+      </button>
+      <div class="card-tools">
+        <button class="btn-tool" onclick="shareSavedQuiz('${q.id}')">🔗 Share</button>
+        <button class="btn-tool" onclick="editQuiz('${q.id}')">✏️ Sửa</button>
+        <button class="btn-tool delete" onclick="deleteQuiz('${q.id}')">🗑 Xóa</button>
       </div>
     </div>
   `).join("");
@@ -412,6 +466,7 @@ function renderHome() {
 /* ============ TẠO / SỬA / XÓA ============ */
 function saveQuiz() {
   const title = document.getElementById("quizTitleInput").value.trim();
+  const desc = document.getElementById("quizDescInput").value.trim();
   const text = document.getElementById("inputText").value;
   const time = parseInt(document.getElementById("timeInput").value) || 15;
   
@@ -425,10 +480,10 @@ function saveQuiz() {
   if (editingQuizId) {
     const index = allQuizzes.findIndex(q => q.id === editingQuizId);
     if (index !== -1) {
-      allQuizzes[index] = { ...allQuizzes[index], title, questions: result, time };
+      allQuizzes[index] = { ...allQuizzes[index], title, desc, questions: result, time };
     }
   } else {
-    const newQuiz = { id: Date.now().toString(), title, questions: result, time };
+    const newQuiz = { id: Date.now().toString(), title, desc, questions: result, time };
     allQuizzes.unshift(newQuiz);
   }
   
@@ -442,6 +497,7 @@ function editQuiz(id) {
   editingQuizId = id;
   showCreateForm(true);
   document.getElementById("quizTitleInput").value = quiz.title;
+  document.getElementById("quizDescInput").value = quiz.desc || "";
   document.getElementById("timeInput").value = quiz.time;
   document.getElementById("inputText").value = quiz.questions.map((item, idx) => {
     const opts = item.options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join("\n");
@@ -456,14 +512,13 @@ function deleteQuiz(id) {
   renderHome();
 }
 
-/* ============ SHARE LINK (CÓ BẢO MẬT) ============ */
+/* ============ SHARE LINK ============ */
 function shareSavedQuiz(id) {
   const quiz = allQuizzes.find(q => q.id === id);
   if (!quiz) return;
   try {
     const jsonStr = JSON.stringify(quiz.questions);
     const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-    // Thêm tham số mode=play để khóa giao diện quản lý của bạn bè
     const baseUrl = window.location.origin + window.location.pathname;
     const shareUrl = `${baseUrl}?mode=play&title=${encodeURIComponent(quiz.title)}&time=${quiz.time}&data=${base64}`;
     
@@ -474,11 +529,8 @@ function shareSavedQuiz(id) {
   }
 }
 
-/* ============ KIỂM TRA LINK KHI MỞ WEB ============ */
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
-  
-  // Nếu có tham số mode=play => Chế độ Khách (Bạn bè)
   if (urlParams.get('mode') === 'play') {
     isGuestMode = true;
     const data = urlParams.get('data');
@@ -497,11 +549,7 @@ function checkUrlParams() {
             questions: decodedQuestions,
             time: time
           };
-          
-          // Xóa URL cho sạch
           window.history.replaceState({}, document.title, window.location.pathname);
-          
-          // Tự động vào làm bài luôn, ko hiện Trang Chủ
           hideAllPanels();
           beginQuizSession(sharedQuiz);
           return true; 
@@ -540,7 +588,6 @@ function beginQuizSession(quizData) {
   document.getElementById("btnTogglePalette").classList.remove("hidden");
   document.getElementById("timerDisplay").classList.remove("hidden");
   
-  // Nếu là bạn bè (Guest) thì ẩn nút Trang chủ, ngược lại thì hiện
   if (!isGuestMode) {
     document.getElementById("btnBackHome").classList.remove("hidden");
   } else {
@@ -762,7 +809,6 @@ function finishQuiz() {
   document.getElementById("btnNext").classList.add("hidden");
   document.getElementById("btnFinish").classList.add("hidden");
 
-  // Nếu là khách, không hiện nút "Về trang chủ" vì họ không có quyền vào kho đề
   let homeBtn = "";
   if (!isGuestMode) {
     homeBtn = `<button class="primary" onclick="backToHome()" style="padding: 12px 24px; margin-left:10px;">🏠 Về Trang Chủ</button>`;
@@ -784,6 +830,7 @@ function finishQuiz() {
 
 function loadSample() {
   document.getElementById("quizTitleInput").value = "Đề mẫu BIM";
+  document.getElementById("quizDescInput").value = "Tổng hợp tài liệu môn BIM UTT";
   document.getElementById("inputText").value = `Câu 1: BIM là gì?
 A. Mô hình 3D;
 B. Mô hình revit;
@@ -813,10 +860,8 @@ function escapeHtml(s) {
 /* Khởi động */
 (function init() {
   loadData();
-  
   const isShared = checkUrlParams();
   
-  // Nếu không phải khách (chính bạn mở) -> Hiển thị Kho đề
   if (!isShared && !isGuestMode) {
     hideAllPanels();
     document.getElementById("homePanel").classList.remove("hidden");
